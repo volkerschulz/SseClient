@@ -1,0 +1,25 @@
+{
+    "name": "volkerschulz/sse-client",
+    "description": "Client for server-sent events",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "volkerschulz\\SseClient\\": "src/SseClient/"
+        },
+        "files": [
+            "src/SseClient/SseClient.php"
+        ]
+    },
+    "authors": [
+        {
+            "name": "volkerschulz",
+            "email": "github@volkerschulz.de"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=8.0.0",
+        "guzzlehttp/guzzle": "^7.9"
+    }
+}
