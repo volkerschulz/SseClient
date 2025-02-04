@@ -6,9 +6,38 @@ require_once '../vendor/autoload.php';
 
 $url = 'https://chat.me-local.de/teststream.php';
 
-$client = new SseClient($url);
+$client = new SseClient($url, [
+    'reconnect' => false,
+]);
+$client->setReadTimeout(6);
 foreach($client->getEvents() as $data) {
+    if($data === null) {
+        // Probably a read timeout
+        $error = $client->getLastError();
+        echo 'Error: ' . $error . PHP_EOL;
+        echo '-----------------' . PHP_EOL;
+        $client->abort();
+        break;
+        continue;
+    }
     echo 'Event received: ' . PHP_EOL;
     var_dump($data);
     echo '-----------------' . PHP_EOL;
 }
+echo 'Connection closed' . PHP_EOL;
+sleep(20);
+foreach($client->getEvents() as $data) {
+    if($data === null) {
+        // Probably a read timeout
+        $error = $client->getLastError();
+        echo 'Error: ' . $error . PHP_EOL;
+        echo '-----------------' . PHP_EOL;
+        continue;
+    }
+    echo 'Event received: ' . PHP_EOL;
+    var_dump($data);
+    echo '-----------------' . PHP_EOL;
+}
+echo 'Connection closed' . PHP_EOL;
+$client = null;
+sleep(20);

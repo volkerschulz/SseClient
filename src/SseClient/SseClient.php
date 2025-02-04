@@ -16,10 +16,13 @@ class SseClient {
         'use_last_event_id' => true, // Send Last-Event-ID header?
         'reconnect' => true, // Automatically reconnect on stream end / abort?
         'min_wait_for_reconnect' => 100, // Minimum time to wait before reconnecting
-        'max_wait_for_reconnect' => 30000 // Maximum time to wait before reconnecting
+        'max_wait_for_reconnect' => 30000, // Maximum time to wait before reconnecting
+        'read_timeout' => 0 // Read timeout for the stream
     ];
     protected ?int $server_retry = null;
     protected ?string $last_event_id = null;
+    protected string $last_error = '';
+    protected bool $abort_requested = false;
 
     const END_OF_MESSAGE = "/\r\n\r\n|\n\n|\r\r/";
 
@@ -29,17 +32,31 @@ class SseClient {
         $this->client = new \GuzzleHttp\Client();
     }
 
-    public function addHeader(string $key, string $value) {
+    public function addHeader(string $key, string $value) : void {
         $this->options['headers'][$key] = $value;
+    }
+
+    public function setReadTimeout(int $seconds) : void {
+        $this->options['read_timeout'] = $seconds;
+    }
+
+    public function abort() : void {
+        $this->abort_requested = true;
     }
 
     public function getEvents() {
         $this->connect_guzzle();
         $buffer = '';
-        while(!$this->stream->eof()) {
-            $byte = $this->stream->read(1);
+        $this->abort_requested = false;
+        while(!$this->stream->eof() && !$this->abort_requested) {
+            try { 
+                $byte = $this->stream->read(1); 
+            } catch(\Exception $e) { 
+                $this->last_error = $e->getMessage();
+                yield null;
+                continue; 
+            }
             $buffer .= $byte;
-
             if (preg_match(self::END_OF_MESSAGE, $buffer)) {
                 $parts = preg_split(self::END_OF_MESSAGE, $buffer, 2);
                 $buffer = $parts[1];
@@ -56,9 +73,14 @@ class SseClient {
                 }
             }
         }
+        $this->stream->close();
     }
 
-    private function delay_reconnect() {
+    public function getLastError() : string {
+        return $this->last_error;
+    }
+
+    private function delay_reconnect() : void {
         $delay_ms = $this->options['min_wait_for_reconnect'];
         if($this->server_retry !== null) {
             if($this->server_retry < $this->options['min_wait_for_reconnect']) {
@@ -72,20 +94,21 @@ class SseClient {
         usleep($delay_ms * 1000);
     }
 
-    private function connect_guzzle() {
+    private function connect_guzzle() : void {
         if($this->options['use_last_event_id'] && $this->last_event_id !== null) {
             $this->options['headers']['Last-Event-ID'] = $this->last_event_id;
         }
         $response = $this->client->request('GET', $this->url, [
             'stream' => true,
+            'read_timeout' => $this->options['read_timeout'],
             'headers' => $this->options['headers']
         ]);
         $this->stream = $response->getBody();
     }
 
-    private function parseEvent($bodyContents) {
+    private function parseEvent(string $event) : array {
         $data = [];
-        $lines = explode("\n", $bodyContents);
+        $lines = explode("\n", $event);
         foreach($lines as $line) {
             $line = trim($line);
             if(empty($line)) {

@@ -1,6 +1,6 @@
 {
     "name": "volkerschulz/sse-client",
-    "description": "Client for server-sent events",
+    "description": "Client for Server-Sent Events",
     "type": "library",
     "license": "MIT",
     "autoload": {
