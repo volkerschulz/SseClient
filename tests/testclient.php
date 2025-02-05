@@ -10,7 +10,8 @@ $client = new SseClient($url, [
     'reconnect' => false,
 ]);
 $client->setReadTimeout(6);
-foreach($client->getEvents() as $data) {
+
+foreach($client->getEvents($options) as $data) {
     if($data === null) {
         // Probably a read timeout
         $error = $client->getLastError();
@@ -25,8 +26,14 @@ foreach($client->getEvents() as $data) {
     echo '-----------------' . PHP_EOL;
 }
 echo 'Connection closed' . PHP_EOL;
-sleep(20);
-foreach($client->getEvents() as $data) {
+sleep(10);
+
+$options = [
+    'form_params' => [
+        'testkey' => 'testvalue',
+    ],
+];
+foreach($client->getEvents($options) as $data) {
     if($data === null) {
         // Probably a read timeout
         $error = $client->getLastError();

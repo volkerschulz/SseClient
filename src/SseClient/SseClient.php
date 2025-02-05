@@ -44,8 +44,8 @@ class SseClient {
         $this->abort_requested = true;
     }
 
-    public function getEvents() {
-        $this->connect_guzzle();
+    public function getEvents(array $client_options = [], ?string $client_method = null) : \Generator {
+        $this->connect_guzzle($client_options, $client_method);
         $buffer = '';
         $this->abort_requested = false;
         while(!$this->stream->eof() && !$this->abort_requested) {
@@ -69,7 +69,7 @@ class SseClient {
                     break;
                 } else {
                     $this->delay_reconnect();
-                    $this->connect_guzzle();
+                    $this->connect_guzzle($client_options, $client_method);
                 }
             }
         }
@@ -94,15 +94,32 @@ class SseClient {
         usleep($delay_ms * 1000);
     }
 
-    private function connect_guzzle() : void {
+    private function connect_guzzle(array $client_options, ?string $client_method) : void {
         if($this->options['use_last_event_id'] && $this->last_event_id !== null) {
             $this->options['headers']['Last-Event-ID'] = $this->last_event_id;
         }
-        $response = $this->client->request('GET', $this->url, [
-            'stream' => true,
-            'read_timeout' => $this->options['read_timeout'],
-            'headers' => $this->options['headers']
-        ]);
+        
+        if($client_method === null) {
+            $client_method = 'GET';
+            if(!empty($client_options['json']) 
+                || !empty($client_options['form_params'])
+                || !empty($client_options['multipart'])
+                || !empty($client_options['body'])) {
+                    $client_method = 'POST';
+            }
+        }
+
+        $client_options['stream'] = true;
+
+        if(empty($client_options['read_timeout']))
+            $client_options['read_timeout'] = $this->options['read_timeout'];
+
+        if(empty($client_options['headers']))
+            $client_options['headers'] = $this->options['headers'];
+        else
+            $client_options['headers'] = array_merge($this->options['headers'], $client_options['headers']);
+
+        $response = $this->client->request($client_method, $this->url, $client_options);
         $this->stream = $response->getBody();
     }
 
@@ -119,8 +136,10 @@ class SseClient {
             }
             $parts = explode(':', $line, 2);
             if(count($parts) == 2) {
+                $parts[0] = trim($parts[0]);
+                $parts[1] = trim($parts[1]);
                 if(empty($parts[0])) {
-                    $data['comments'][] = trim($parts[1]);
+                    $data['comments'][] = $parts[1];
                 } elseif($parts[0] == 'data') {
                     $data['data'][] = $parts[1];
                 } else {
