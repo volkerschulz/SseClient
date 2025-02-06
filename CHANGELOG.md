@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased] - yyyy-mm-dd
  
 ### Added
+- Change log
  
 ### Changed
 - Default setting for ```reconnect``` is now ```false```
@@ -15,6 +16,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - Additional http request methods
+- Http-client options
  
 ### Changed
 
