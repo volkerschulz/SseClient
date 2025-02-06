@@ -5,9 +5,13 @@ All notable changes to this project will be documented in this file.
  
 ### Added
 - Change log
+- Event objects
+- Option `associative` can optionally be set to `false` to be yielded an event object instead of an associative array
+- Option `concatenate_data` can optionally be set to `false` to get an array instead of a string of data
  
 ### Changed
-- Default setting for ```reconnect``` is now ```false```
+- Now requires PHP >= 8.1 (instead of >= 8.0)
+- Default setting for `reconnect` is now `false`
  
 ### Fixed
  

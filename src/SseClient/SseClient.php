@@ -2,10 +2,13 @@
 
 namespace volkerschulz;
 
+use volkerschulz\SseClient\Event;
+
 class SseClient {
 
     protected $stream;
     protected $client;
+    protected $response;
     protected string $url;
     protected array $options = [
         'headers' => [
@@ -17,7 +20,9 @@ class SseClient {
         'reconnect' => false, // Automatically reconnect on stream end / abort?
         'min_wait_for_reconnect' => 100, // Minimum time to wait before reconnecting
         'max_wait_for_reconnect' => 30000, // Maximum time to wait before reconnecting
-        'read_timeout' => 0 // Read timeout for the stream
+        'read_timeout' => 0, // Read timeout for the stream
+        'associative' => true, // Return events as associative arrays
+        'concatenate_data' => true, // Concatenate data lines into a single string, inserting newlines
     ];
     protected ?int $server_retry = null;
     protected ?string $last_event_id = null;
@@ -119,11 +124,11 @@ class SseClient {
         else
             $client_options['headers'] = array_merge($this->options['headers'], $client_options['headers']);
 
-        $response = $this->client->request($client_method, $this->url, $client_options);
-        $this->stream = $response->getBody();
+        $this->response = $this->client->request($client_method, $this->url, $client_options);
+        $this->stream =  $this->response->getBody();
     }
 
-    private function parseEvent(string $event) : array {
+    private function parseEvent(string $event) : array | Event {
         $data = [];
         $lines = explode("\n", $event);
         foreach($lines as $line) {
@@ -157,8 +162,15 @@ class SseClient {
                 $data[] = $line;
             }
         }
-        if(!empty($data['data']) && is_array($data['data'])) $data['data'] = implode("\n", $data['data']);
-        return $data;
+        if(!empty($data['data']) 
+            && is_array($data['data'])
+            && $this->options['concatenate_data']) {
+                $data['data'] = implode("\n", $data['data']);
+        } elseif(empty($data['data']) 
+            && $this->options['concatenate_data']) {
+                $data['data'] = '';
+        }
+        return $this->options['associative'] ? $data : new Event($data['id'] ?? null, $data['event'] ?? null, $data['data'] ?? null, $data['comments'] ?? null, $data['retry'] ?? null);
     }
 
 }

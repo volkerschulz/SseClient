@@ -11,7 +11,7 @@ $client = new SseClient($url, [
 ]);
 $client->setReadTimeout(6);
 
-foreach($client->getEvents($options) as $data) {
+foreach($client->getEvents() as $data) {
     if($data === null) {
         // Probably a read timeout
         $error = $client->getLastError();
@@ -31,7 +31,7 @@ sleep(10);
 $options = [
     'form_params' => [
         'testkey' => 'testvalue',
-    ],
+    ]
 ];
 foreach($client->getEvents($options) as $data) {
     if($data === null) {
