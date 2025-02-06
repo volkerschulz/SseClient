@@ -14,7 +14,7 @@ class SseClient {
         ],
         'ignore_comments' => false, // Include comments in the event data?
         'use_last_event_id' => true, // Send Last-Event-ID header?
-        'reconnect' => true, // Automatically reconnect on stream end / abort?
+        'reconnect' => false, // Automatically reconnect on stream end / abort?
         'min_wait_for_reconnect' => 100, // Minimum time to wait before reconnecting
         'max_wait_for_reconnect' => 30000, // Maximum time to wait before reconnecting
         'read_timeout' => 0 // Read timeout for the stream
