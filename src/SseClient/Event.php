@@ -10,12 +10,12 @@ class Event {
     public readonly ?int $retry;
 
 
-    public function __construct(?string $id, ?string $event, mixed $data, ?array $comments, ?int $retry) {
-        $this->id = $id;
-        $this->event = $event;
-        $this->data = $data;
-        $this->comments = $comments;
-        $this->retry = $retry;
+    public function __construct(array $event_data) {
+        $this->id = $event_data['id'] ?? null;
+        $this->event = $event_data['event'] ?? null;
+        $this->data = $event_data['data'] ?? null;
+        $this->comments = $event_data['comments'] ?? null;
+        $this->retry = $event_data['retry'] ?? null;
     }
 
     public function getId() : ?string {
@@ -37,4 +37,5 @@ class Event {
     public function getRetry() : ?int {
         return $this->retry;
     }
+    
 }

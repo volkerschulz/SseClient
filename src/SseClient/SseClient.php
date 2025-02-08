@@ -6,6 +6,8 @@ use volkerschulz\SseClient\Event;
 
 class SseClient {
 
+    /* Living standard: https://html.spec.whatwg.org/multipage/server-sent-events.html */
+
     protected $stream;
     protected $client;
     protected $response;
@@ -17,19 +19,22 @@ class SseClient {
         ],
         'ignore_comments' => false, // Include comments in the event data?
         'use_last_event_id' => true, // Send Last-Event-ID header?
+        'always_return_last_event_id' => true, // Always return the last event id?
         'reconnect' => false, // Automatically reconnect on stream end / abort?
         'min_wait_for_reconnect' => 100, // Minimum time to wait before reconnecting
         'max_wait_for_reconnect' => 30000, // Maximum time to wait before reconnecting
         'read_timeout' => 0, // Read timeout for the stream
         'associative' => true, // Return events as associative arrays
         'concatenate_data' => true, // Concatenate data lines into a single string, inserting newlines
+        'line_delimiter' => "/\r\n|\n|\r/", // Delimiter for splitting lines
+        'message_delimiter' => "/\r\n\r\n|\n\n|\r\r/", // Delimiter for splitting messages
+        'respect_204' => true, // Respect 204 No Content status code to stop reconnecting
     ];
     protected ?int $server_retry = null;
     protected ?string $last_event_id = null;
     protected string $last_error = '';
+    protected ?int $last_status_code = null;
     protected bool $abort_requested = false;
-
-    const END_OF_MESSAGE = "/\r\n\r\n|\n\n|\r\r/";
 
     public function __construct(string $url, array $options = []) {
         $this->options = array_merge($this->options, $options);
@@ -62,15 +67,17 @@ class SseClient {
                 continue; 
             }
             $buffer .= $byte;
-            if (preg_match(self::END_OF_MESSAGE, $buffer)) {
-                $parts = preg_split(self::END_OF_MESSAGE, $buffer, 2);
+            if (preg_match($this->options['message_delimiter'], $buffer)) {
+                $parts = preg_split($this->options['message_delimiter'], $buffer, 2);
                 $buffer = $parts[1];
                 $event_data = $this->parseEvent($parts[0]);
                 if(!empty($event_data)) yield $event_data;
             }
 
             if($this->stream->eof()) {
-                if(!$this->options['reconnect']) {
+                if(!$this->options['reconnect'] || $this->abort_requested) {
+                    break;
+                } elseif($this->options['respect_204'] && $this->last_status_code === 204) {
                     break;
                 } else {
                     $this->delay_reconnect();
@@ -124,13 +131,17 @@ class SseClient {
         else
             $client_options['headers'] = array_merge($this->options['headers'], $client_options['headers']);
 
+        $this->last_status_code = null;
         $this->response = $this->client->request($client_method, $this->url, $client_options);
+        $this->last_status_code = $this->response->getStatusCode() ?? null;
         $this->stream =  $this->response->getBody();
     }
 
     private function parseEvent(string $event) : array | Event {
-        $data = [];
-        $lines = explode("\n", $event);
+        $data = [
+            'event' => 'message',
+        ];
+        $lines = preg_split($this->options['line_delimiter'], $event);
         foreach($lines as $line) {
             $line = trim($line);
             if(empty($line)) {
@@ -170,7 +181,10 @@ class SseClient {
             && $this->options['concatenate_data']) {
                 $data['data'] = '';
         }
-        return $this->options['associative'] ? $data : new Event($data['id'] ?? null, $data['event'] ?? null, $data['data'] ?? null, $data['comments'] ?? null, $data['retry'] ?? null);
+        if(empty($data['id']) && $this->options['always_return_last_event_id']) {
+            $data['id'] = $this->last_event_id;
+        }
+        return $this->options['associative'] ? $data : new Event($data);
     }
 
 }
