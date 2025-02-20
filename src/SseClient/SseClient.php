@@ -20,11 +20,11 @@ class SseClient {
         'ignore_comments' => false, // Include comments in the event data?
         'use_last_event_id' => true, // Send Last-Event-ID header?
         'always_return_last_event_id' => true, // Always return the last event id?
-        'reconnect' => false, // Automatically reconnect on stream end / abort?
+        'reconnect' => true, // Automatically reconnect on stream end / abort?
         'min_wait_for_reconnect' => 100, // Minimum time to wait before reconnecting
         'max_wait_for_reconnect' => 30000, // Maximum time to wait before reconnecting
         'read_timeout' => 0, // Read timeout for the stream
-        'associative' => true, // Return events as associative arrays
+        'associative' => false, // Return events as associative arrays
         'concatenate_data' => true, // Concatenate data lines into a single string, inserting newlines
         'line_delimiter' => "/\r\n|\n|\r/", // Delimiter for splitting lines
         'message_delimiter' => "/\r\n\r\n|\n\n|\r\r/", // Delimiter for splitting messages

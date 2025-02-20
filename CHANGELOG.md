@@ -4,8 +4,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased] - yyyy-mm-dd
 
 ### Added
+- Description of [SSE client options](/docs/options.md)
 
 ### Changed
+- Option `reconnect` defaults to `true` (as expected by the standard)
+- Option `associative` defaults to `false` (`Event` objects are used)
 
 ### Fixed
 

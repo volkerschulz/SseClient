@@ -7,7 +7,6 @@ The recommended way to install SseClient is through
 ```bash
 composer require volkerschulz/sse-client
 ```
-Current version is 0.9.1
 
 ## Usage
 Minimal:
@@ -19,6 +18,8 @@ foreach($client->getEvents() as $event) {
     // Handle single event 
 }
 ```
+
+[List of all options](/docs/options.md)
 
 ## Security
 
