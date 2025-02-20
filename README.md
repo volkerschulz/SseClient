@@ -18,7 +18,29 @@ foreach($client->getEvents() as $event) {
     // Handle single event 
 }
 ```
+\
+POST request w/ options:
+```php
+use volkerschulz\SseClient;
 
+$sse_options = [
+    'reconnect' => false,
+    'read_timeout' => 5
+];
+
+$client = new SseClient('https://example.com', $sse_options);
+
+$http_options = [
+    'json' => [
+        'foo' => 'bar'
+    ],
+    'allow_redirects' => false
+];
+
+foreach($client->getEvents($http_options, 'POST') as $event) {
+    // Handle single event 
+}
+```
 [List of all options](/docs/options.md)
 
 ## Security

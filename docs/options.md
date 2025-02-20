@@ -36,3 +36,13 @@
 
 
 ## HTTP client options
+
+All [Guzzle request options](https://docs.guzzlephp.org/en/stable/request-options.html) may be used, with the exeption of:
+
+- `decode_content` (Always `true`)
+- `headers`=>`Accept` (Always `text/event-stream`)
+- `headers`=>`Cache-Control` (Always `no-cache`)
+- `read_timeout` (Set by SSE client options)
+- `sink` (SSE client needs the stream)
+- `stream` (Always `true`)
+- `synchronous` (Not sensible for a streaming resource)

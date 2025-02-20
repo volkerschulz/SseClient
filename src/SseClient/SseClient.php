@@ -27,7 +27,7 @@ class SseClient {
         'associative' => false, // Return events as associative arrays
         'concatenate_data' => true, // Concatenate data lines into a single string, inserting newlines
         'line_delimiter' => "/\r\n|\n|\r/", // Delimiter for splitting lines
-        'message_delimiter' => "/\r\n\r\n|\n\n|\r\r/", // Delimiter for splitting messages
+        'event_delimiter' => "/\r\n\r\n|\n\n|\r\r/", // Delimiter for splitting events
         'respect_204' => true, // Respect 204 No Content status code to stop reconnecting
     ];
     protected ?int $server_retry = null;
@@ -67,8 +67,8 @@ class SseClient {
                 continue; 
             }
             $buffer .= $byte;
-            if (preg_match($this->options['message_delimiter'], $buffer)) {
-                $parts = preg_split($this->options['message_delimiter'], $buffer, 2);
+            if (preg_match($this->options['event_delimiter'], $buffer)) {
+                $parts = preg_split($this->options['event_delimiter'], $buffer, 2);
                 $buffer = $parts[1];
                 $event_data = $this->parseEvent($parts[0]);
                 if(!empty($event_data)) yield $event_data;
@@ -130,6 +130,15 @@ class SseClient {
             $client_options['headers'] = $this->options['headers'];
         else
             $client_options['headers'] = array_merge($this->options['headers'], $client_options['headers']);
+
+        if(isset($client_options['decode_content']))
+            unset($client_options['decode_content']);
+
+        if(isset($client_options['sink']))
+            unset($client_options['sink']);
+
+        if(isset($client_options['synchronous']))
+            unset($client_options['synchronous']);
 
         $this->last_status_code = null;
         $this->response = $this->client->request($client_method, $this->url, $client_options);

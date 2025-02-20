@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Option `reconnect` defaults to `true` (as expected by the standard)
 - Option `associative` defaults to `false` (`Event` objects are used)
+- Option `message_delimiter` renamed to `event_delimiter`
 
 ### Fixed
 
