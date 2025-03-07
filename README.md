@@ -16,6 +16,7 @@ use volkerschulz\SseClient;
 $client = new SseClient('https://example.com');
 foreach($client->getEvents() as $event) {
     // Handle single event 
+    echo $event->getData();
 }
 ```
 \
