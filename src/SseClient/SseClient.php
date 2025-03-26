@@ -74,7 +74,7 @@ class SseClient {
             }
 
             $buffer .= $chunk;
-            while (preg_match($this->options['message_delimiter'], $buffer, $matches, PREG_OFFSET_CAPTURE)) {
+            while (preg_match($this->options['event_delimiter'], $buffer, $matches, PREG_OFFSET_CAPTURE)) {
                 $message = substr($buffer, 0, $matches[0][1]);
                 $buffer = substr($buffer, $matches[0][1] + strlen($matches[0][0]));
 
