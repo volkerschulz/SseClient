@@ -59,19 +59,29 @@ class SseClient {
         $buffer = '';
         $this->abort_requested = false;
         while(!$this->stream->eof() && !$this->abort_requested) {
-            try { 
-                $byte = $this->stream->read(1); 
-            } catch(\Exception $e) { 
+            try {
+                // Use a larger buffer size and a timeout to make the read operation blocking
+                $chunk = $this->stream->read(4096);
+                if ($chunk === '') {
+                    // If no data is available, wait for a short time before trying again
+                    usleep(100000); // 100ms
+                    continue;
+                }
+            } catch (\Exception $e) {
                 $this->last_error = $e->getMessage();
                 yield null;
-                continue; 
+                continue;
             }
-            $buffer .= $byte;
-            if (preg_match($this->options['event_delimiter'], $buffer)) {
-                $parts = preg_split($this->options['event_delimiter'], $buffer, 2);
-                $buffer = $parts[1];
-                $event_data = $this->parseEvent($parts[0]);
-                if(!empty($event_data)) yield $event_data;
+
+            $buffer .= $chunk;
+            while (preg_match($this->options['message_delimiter'], $buffer, $matches, PREG_OFFSET_CAPTURE)) {
+                $message = substr($buffer, 0, $matches[0][1]);
+                $buffer = substr($buffer, $matches[0][1] + strlen($matches[0][0]));
+
+                $event_data = $this->parseEvent($message);
+                if (!empty($event_data)) {
+                    yield $event_data;
+                }
             }
 
             if($this->stream->eof()) {
